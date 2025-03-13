@@ -34,7 +34,8 @@ sys.path.append("/home/rest/baito/quri-parts/packages/scaluq")
 from quri_parts.scaluq.circuit import (
     scaluq_circuit_helper_function,
     convert_circuit_f32,
-    convert_gate_f32
+    convert_gate_f32,
+    dense_matrix_gate_scaluq_f32
 )
 
 def a():
@@ -128,10 +129,73 @@ rotation_gate_mapping_f32: Mapping[
     gates.RZ: scaluq.f32.gate.RZ,
 }
 
-#TODO
 def test_convert_rotation_gate_f32() -> None:
+    print("test_convert_rotation_gate_f32")
     for qp_fac, sq_gate in rotation_gate_mapping_f32.items():
         g = qp_fac(7, 0.125)
         converted = convert_gate_f32(g)
         expercted = sq_gate(7, 0.125)
         assert gates_equal_f32(converted, expercted)   
+
+def test_convert_unitary_matrix_gate_f32() -> None:
+    print("test_convert_unitary_matrix_gate")
+    umat = ((1, 0), (0, np.cos(np.pi / 4) + 1j * np.sin(np.pi / 4)))
+    expected = dense_matrix_gate_scaluq_f32(7, umat)
+    converted = convert_gate_f32(gates.UnitaryMatrix((7,), umat))
+    assert gates_equal_f32(converted, expected)
+
+def test_convert_u_gate_f32() -> None:
+    for g, expected in [
+        (gates.U1(7, 0.125), scaluq.f32.gate.U1(7, 0.125)),
+        (gates.U2(7, 0.125, -0.125), scaluq.f32.gate.U2(7, 0.125, -0.125)),
+        (gates.U3(7, 0.125, -0.125, 0.625), scaluq.f32.gate.U3(7, 0.125, -0.125, 0.625)),
+    ]:
+        converted = convert_gate_f32(g)
+        assert gates_equal_f32(converted, expected)
+
+def test_convert_pauli_gate_f32() -> None:
+    print("test_convert_unitary_pauli_gate")
+    g = gates.Pauli((11, 7, 13), (2, 3, 1))
+    converted = convert_gate_f32(g)
+    pauli_ope = scaluq.f32.PauliOperator([11,7,13],[2,3,1])
+    expected = scaluq.f32.gate.Pauli(pauli_ope)
+    assert gates_equal_f32(converted, expected)
+
+def test_convert_pauli_rotation_gate_f32() -> None:
+    print("test_convert_pauli_rotation_gate")
+    g = gates.PauliRotation((11, 7, 13), (2, 3, 1), 0.125)
+    converted = convert_gate_f32(g)
+    #pauli_ope = scaluq.f32.PauliOperator([11,7,13],[2,3,1])
+    #expected = scaluq.f32.gate.PauliRotation(pauli_ope, 0.125)
+    #assert gates_equal_f32(converted, expected)
+
+def test_convert_circuit_f32() -> None:
+    circuit = QuantumCircuit(3)
+    original_gates = [
+        gates.X(1),
+        gates.H(2),
+        gates.CNOT(0, 2),
+        gates.RX(0, 0.125),
+        gates.TOFFOLI(2, 0, 1),
+    ]
+
+    for g in original_gates:
+        circuit.add_gate(g)
+
+    converted = convert_circuit_f32(circuit)
+    assert converted.n_qubits() == 3
+
+    expected_gates = [
+        scaluq.f32.gate.X(1),
+        scaluq.f32.gate.H(2),
+        scaluq.f32.gate.CX(0, 2),
+        scaluq.f32.gate.RX(0, 0.125),
+        scaluq.f32.gate.Toffoli(2, 0, 1),
+    ]
+
+    assert converted.n_gates() == len(expected_gates)
+    for i, expected in enumerate(expected_gates):
+        assert gates_equal_f32(converted.get_gate_at(i), expected)
+
+#TODO
+#def test_convert_parametric_circuit() -> None:

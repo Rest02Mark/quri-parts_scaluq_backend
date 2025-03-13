@@ -109,6 +109,8 @@ def _u3_gate_scaluq_f64(gate: QuantumGate) -> scaluq.f64.Gate:
         scaluq.f64.gate.U3(*gate.target_indices, *gate.params),
     )
 
+#TODO paramgate
+
 _single_qubit_reverse_rotation_gate_scaluq_f32: Mapping[
     SingleQubitGateNameType, Callable[[int, float], scaluq.f32.Gate]
 ] = {
@@ -168,7 +170,7 @@ _multi_pauli_gate_scaluq_f64: Mapping[
 }
 
 _multi_pauli_rotation_gate_scaluq_f32: Mapping[
-    MultiQubitGateNameType, Callable[[list[int], list[int], float], scaluq.f32.Gate]
+    MultiQubitGateNameType, Callable[[scaluq.f32.PauliOperator, float], scaluq.f32.Gate]
 ] = {
     gate_names.PauliRotation: scaluq.f32.gate.PauliRotation,
 }
@@ -194,11 +196,11 @@ _parametric_gate_scaluq_f64 = {
 }
 
 
-def _dense_matrix_gate_scaluq_f32(
+def dense_matrix_gate_scaluq_f32(
         targets: Union[int, Sequence[int]], unitary_matrix: ArrayLike
 ) -> scaluq.f32.Gate:
-    #tuple to list
-    targets = list(targets)
+    if isinstance(targets, int):
+        targets = [targets]
     unitary_matrix = np.array(unitary_matrix, dtype=np.complex64)
     return scaluq.f32.gate.DenseMatrix(targets,unitary_matrix)
 
@@ -241,9 +243,13 @@ def convert_gate_f32(
         if gate.name in _multi_pauli_gate_scaluq_f32:
             pauli = scaluq.f32.PauliOperator(target_indices, pauli_ids)
             return _multi_pauli_gate_scaluq_f32[gate.name](pauli)
-        
+        elif gate.name in _multi_pauli_rotation_gate_scaluq_f32:
+            #print(gate.params)
+            return _multi_pauli_rotation_gate_scaluq_f32[gate.name](
+                target_indices, pauli_ids, gate.params[0]
+            )
     elif is_unitary_matrix_gate_name(gate.name):
-        return _dense_matrix_gate_scaluq_f32(gate.target_indices, gate.unitary_matrix)
+        return dense_matrix_gate_scaluq_f32(gate.target_indices, gate.unitary_matrix)
     
     elif is_parametric_gate_name(gate.name):
         #TODO とりあえず、qulacsと同様に未対応とする
@@ -267,13 +273,42 @@ def convert_circuit_f32(
     return scaluq_f32_circuit
 
 #TODO
-"""
 def convert_parametric_circuit_f32(
-        circuit: ParametricQuantumCircuitProtocol,
+        circuit : ParametricQuantumCircuitProtocol,
 ) -> tuple[
-    scaluq.f32.
-]
-"""
+    scaluq.f32.Circuit,Callable[[Sequence[float]],Sequence[float]]
+]:
+    param_circuit : ImmutableParametricQuantumCircuit
+    param_mapper : Callable[[Sequence[float]],Sequence[float]]
+    if isinstance(circuit, ImmutableLinearMappedParametricQuantumCircuit):
+        param_mapping = circuit.param_mapping
+        param_circuit = circuit.primitive_circuit()
+        orig_param_mapper = param_mapping.seq_mapper
+
+        def param_mapper(s: Sequence[float]) -> Sequence[float]:
+            return tuple(p for p in orig_param_mapper(s))
+        
+    elif isinstance(circuit, ImmutableParametricQuantumCircuit):
+        param_circuit = circuit
+
+        def param_mapper(s: Sequence[float]) -> Sequence[float]:
+            return tuple(p for p in s)
+        
+    else:
+        raise ValueError(f"Unsupported parametric circuit type: {type(circuit)}")
+    scaluq_f32_circuit = scaluq.f32.Circuit(circuit.qubit_count)
+    #mada
+    for gate, _ in param_circuit._gates:
+        if is_parametric_gate_name(gate.name):
+            if gate.name == gate_names.ParametricRX:
+
+                scaluq_f32_circuit.add_param_gate(scaluq.f32.ParamRXGate,)#arg1 paramgate , arg2 str
+
+        else:
+            scaluq_f32_circuit.add_gate(convert_gate_f32(gate))
+
+    return scaluq_f32_circuit, param_mapper
+    
 
 #TODO atode kesu
 def kakunin(circuit: ImmutableQuantumCircuit) -> None:
