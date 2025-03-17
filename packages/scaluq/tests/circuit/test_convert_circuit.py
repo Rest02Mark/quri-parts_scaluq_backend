@@ -28,7 +28,18 @@ from quri_parts.circuit.transpile import (
 )
 
 import sys
-sys.path.append("/home/ryo/baito/quri-parts_rest/packages/scaluq")
+import os
+
+
+# 現在の作業ディレクトリを取得
+script_dir = os.getcwd()
+script_dir = script_dir.replace("/jikken", "")
+target_path =  script_dir + "/packages/scaluq"
+# sys.path に追加
+#sys.path.append(target_path)
+sys.path.insert(0, target_path)
+print(sys.path)
+#sys.path.append("/home/rest/baito/quri-parts/packages/scaluq")
 #import
 
 from quri_parts.scaluq.circuit import (
