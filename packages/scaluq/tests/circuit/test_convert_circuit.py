@@ -28,7 +28,7 @@ from quri_parts.circuit.transpile import (
 )
 
 import sys
-sys.path.append("/home/rest/baito/quri-parts/packages/scaluq")
+sys.path.append("/home/ryo/baito/quri-parts_rest/packages/scaluq")
 #import
 
 from quri_parts.scaluq.circuit import (
@@ -142,6 +142,8 @@ def test_convert_unitary_matrix_gate_f32() -> None:
     umat = ((1, 0), (0, np.cos(np.pi / 4) + 1j * np.sin(np.pi / 4)))
     expected = dense_matrix_gate_scaluq_f32(7, umat)
     converted = convert_gate_f32(gates.UnitaryMatrix((7,), umat))
+    print("converted: ", converted.gate_type())
+    print("expected: ", expected.gate_type())
     assert gates_equal_f32(converted, expected)
 
 def test_convert_u_gate_f32() -> None:
