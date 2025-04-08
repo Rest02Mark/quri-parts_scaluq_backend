@@ -19,6 +19,7 @@ from quri_parts.circuit import (
     ParametricQuantumCircuit,
     QuantumCircuit,
     QuantumGate,
+    ParametricQuantumGate,
     gates,
 )
 
@@ -45,7 +46,9 @@ print(sys.path)
 from quri_parts.scaluq.circuit import (
     scaluq_circuit_helper_function,
     convert_circuit_f32,
+    convert_parametric_circuit_f32,
     convert_gate_f32,
+    convert_parametric_gate_f32,
     dense_matrix_gate_scaluq_f32
 )
 
@@ -178,9 +181,28 @@ def test_convert_pauli_rotation_gate_f32() -> None:
     print("test_convert_pauli_rotation_gate")
     g = gates.PauliRotation((11, 7, 13), (2, 3, 1), 0.125)
     converted = convert_gate_f32(g)
-    #pauli_ope = scaluq.f32.PauliOperator([11,7,13],[2,3,1])
-    #expected = scaluq.f32.gate.PauliRotation(pauli_ope, 0.125)
-    #assert gates_equal_f32(converted, expected)
+    pauli_ope = scaluq.f32.PauliOperator([11,7,13],[2,3,1])
+    expected = scaluq.f32.gate.PauliRotation(pauli_ope, 0.125)
+    assert gates_equal_f32(converted, expected)
+
+#TODO 
+
+_single_parametric_gate_mapping_f32: Mapping[
+    Callable[[int,float],ParametricQuantumGate],Callable[[int,float],scaluq.f32.Gate]
+] = {
+    gates.ParametricRX: scaluq.f32.gate.ParamRX,
+    gates.ParametricRY: scaluq.f32.gate.ParamRY,
+    gates.ParametricRZ: scaluq.f32.gate.ParamRZ,
+}
+
+def test_convert_parametric_gate_f32() -> None:
+    print("test_convert_parametric_gate_f32")
+    for qp_fac, sq_gate in _single_parametric_gate_mapping_f32.items():
+        g = qp_fac(7)
+        converted = convert_parametric_gate_f32(g)
+        expected = sq_gate(7)
+        assert gates_equal_f32(converted, expected)
+
 
 def test_convert_circuit_f32() -> None:
     circuit = QuantumCircuit(3)
@@ -210,5 +232,46 @@ def test_convert_circuit_f32() -> None:
     for i, expected in enumerate(expected_gates):
         assert gates_equal_f32(converted.get_gate_at(i), expected)
 
+
+param_gate_mapping_f32: Mapping[
+    Callable[[int,float],QuantumGate],Callable[[int,float],scaluq.f32.Gate]
+] = {
+    gates.ParametricRX: scaluq.f32.gate.ParamRX,
+    gates.ParametricRY: scaluq.f32.gate.ParamRY,
+    gates.ParametricRZ: scaluq.f32.gate.ParamRZ,
+    gates.ParametricPauliRotation: scaluq.f32.gate.ParamPauliRotation,
+}
+
 #TODO
-#def test_convert_parametric_circuit() -> None:
+"""
+def test_convert_parametric_circuit() -> None:
+    circuit = ParametricQuantumCircuit(3)
+    circuit.add_X_gate(0)
+    circuit.add_ParametricRX_gate(0)
+    circuit.add_H_gate(2)
+    circuit.add_ParametricRY_gate(1)
+    circuit.add_CNOT_gate(0, 2)
+    circuit.add_ParametricRZ_gate(2)
+    circuit.add_RX_gate(0, 0.125)
+    #TODO
+    #circuit.add_ParametricPauliRotation_gate((0, 1, 2), (1, 2, 3))
+
+    converted, param_mapper = convert_parametric_circuit_f32(circuit)
+    assert converted.get_qubit_count() == 3
+
+    expected_gates = [
+        scaluq.f32.gate.X(0),
+        scaluq.f32.gate.ParamRX(0),
+        scaluq.f32.gate.H(2),
+        scaluq.f32.gate.ParamRY(1),
+        scaluq.f32.gate.CX(0, 2),
+        scaluq.f32.gate.ParamRZ(2),
+        scaluq.f32.gate.RX(0, 0.125),
+        #scaluq.f32.gate.ParamPauliRotation(
+    ]
+
+    assert converted.gete_gate_count() == len(expected_gates)
+    for i, expected in enumerate(expected_gates):
+        assert gates_equal_f32(converted.get_gate_at(i), expected)
+"""
+
