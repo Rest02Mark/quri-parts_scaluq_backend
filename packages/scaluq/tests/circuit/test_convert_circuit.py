@@ -74,6 +74,25 @@ def gates_equal_f32(g1: scaluq.f32.Gate, g2: scaluq.f32.Gate) -> bool:
         bool, np.all(g1.get_matrix() == g2.get_matrix())
     )
 
+#TODO 一つにまとめる
+def param_gates_equal_f32(
+    g1: scaluq.f32.ParamGate,
+    g2: scaluq.f32.ParamGate,
+) -> bool:
+    def gate_info(
+            g: scaluq.f32.ParamGate,
+    ) -> tuple[str,list[int],list[int]]:
+        return (
+            g.gate_type(),
+            g.target_qubit_list(),
+            g.control_qubit_list(),
+        )
+    
+    return (gate_info(g1) == gate_info(g2)) and cast(
+        bool, np.all(g1.get_matrix() == g2.get_matrix())
+    )
+
+
 single_qubit_gate_mapping_f32: Mapping[
     Callable[[int], QuantumGate], Callable[[int], scaluq.f32.Gate]
 ] = {
