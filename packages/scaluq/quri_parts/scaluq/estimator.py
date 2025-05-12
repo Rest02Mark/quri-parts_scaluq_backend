@@ -28,6 +28,8 @@ from quri_parts.core.operator import zero
 from quri_parts.core.state import ParametricQuantumStateVector, QuantumStateVector
 from quri_parts.core.utils.concurrent import execute_concurrently
 
+from quri_parts.scaluq import scaluqStateT, scaluqParametricStateT
+
 class _Estimate(NamedTuple):
     value: complex
     error: float = 0.0
@@ -35,7 +37,7 @@ class _Estimate(NamedTuple):
 
 
 def _create_scaluq_initial_state(
-        state : Uni
+        state : scaluqStateT
 ) -> scaluq.f64.StateVector:
     sq_state = scaluq.f64.StateVector(state.qubit_count)
 
