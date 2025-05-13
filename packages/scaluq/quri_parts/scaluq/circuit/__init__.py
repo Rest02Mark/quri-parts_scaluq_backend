@@ -324,30 +324,40 @@ def convert_parametric_circuit_f32(
         
     else:
         raise ValueError(f"Unsupported parametric circuit type: {type(circuit)}")
+    
     scaluq_f32_circuit = scaluq.f32.Circuit(circuit.qubit_count)
     #TODO rotatetion　ゲートと扱い同じで良いのか？
+    param_count = 0
     for gate, _ in param_circuit._gates:
+
         if is_parametric_gate_name(gate.name):
+            print("param_count: ", param_count)
             if gate.name == gate_names.ParametricRX:
                 #TODO arg 1?
                 scaluq_f32_circuit.add_param_gate(
-                    scaluq.f32.gate.ParamRX(*gate.target_indices, 1)
+                    scaluq.f32.gate.ParamRX(*gate.target_indices),str(param_count)
                 )#arg1 paramgate , arg2 str
             elif gate.name == gate_names.ParametricRY:
                 scaluq_f32_circuit.add_param_gate(
-                    scaluq.f32.gate.ParamRY(*gate.target_indices, 1)
+                    scaluq.f32.gate.ParamRY(*gate.target_indices),str(param_count)
                 )
             elif gate.name == gate_names.ParametricRZ:
                 scaluq_f32_circuit.add_param_gate(
-                    scaluq.f32.gate.ParamRZ(*gate.target_indices, 1)
+                    scaluq.f32.gate.ParamRZ(*gate.target_indices),str(param_count)
                 )
-            #TODO　仕様確認仕様確認
+            #TODO　仕様確認 テストまだ
             elif gate.name == gate_names.ParametricPauliRotation:
                 target_indices = cast_to_list(gate.target_indices)
                 pauli_ids = cast_to_list(gate.pauli_ids)
-                
+                scaluq_f32_circuit.add_param_gate(
+                    scaluq.f32.gate.ParamPauliRotation(
+                        scaluq.f32.PauliOperator(target_indices, pauli_ids)
+                    ),str(param_count)
+                )
             else:
                 assert_never(gate.name)
+
+            param_count += 1
 
         #パラメトリックゲート以外
         else:

@@ -40,6 +40,8 @@ def _create_scaluq_initial_state(
         state : scaluqStateT
 ) -> scaluq.f64.StateVector:
     sq_state = scaluq.f64.StateVector(state.qubit_count)
+    if isinstance(state, (QuantumStateVector, ParametricQuantumStateVector)):
+        sq_state.load
 
     return sq_state
 

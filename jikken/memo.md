@@ -10,4 +10,3 @@
 paramcircuitの仕様
 scaluqでは、circuitとparamcircuitを区別していない
 
-param gate type と gate typeは異なる　から equal gateを修正
