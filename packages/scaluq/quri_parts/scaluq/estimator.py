@@ -30,22 +30,25 @@ from quri_parts.core.utils.concurrent import execute_concurrently
 
 from quri_parts.scaluq import scaluqStateT, scaluqParametricStateT
 
+from . import cast_to_list
+from .circuit import convert_circuit, convert_parametric_circuit
+
+
+
 class _Estimate(NamedTuple):
     value: complex
     error: float = 0.0
 
 
-
 def _create_scaluq_initial_state(
         state : scaluqStateT
-) -> scaluq.f64.StateVector:
-    sq_state = scaluq.f64.StateVector(state.qubit_count)
+) -> scaluq.f32.StateVector:
+    sq_state = scaluq.f32.StateVector(state.qubit_count)
     if isinstance(state, (QuantumStateVector, ParametricQuantumStateVector)):
-        sq_state.load
-
+        sq_state.load(cast_to_list(state.vector))
     return sq_state
 
-def _estimate(operator: Estimatable, state: scaluq.f64.StateVector) -> Estimate[complex]:
+def _estimate(operator: Estimatable, state: scaluq.f32.StateVector) -> Estimate[complex]:
     if operator == zero():
         return _Estimate(value=0.0)
     # is insatanse
@@ -69,7 +72,7 @@ def create_scaluq_vector_concurrent_estimator(
 ):
     def estimator(
             operators: Collection[Estimatable],
-            steates: Collection[scaluq.f64.StateVector],
+            steates: Collection[scaluq.f32.StateVector],
 
     )
     
