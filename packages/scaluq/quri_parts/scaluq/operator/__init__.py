@@ -15,19 +15,36 @@ from typing_extensions import TypeAlias
 import scaluq
 from quri_parts.core.operator import Operator, PauliLabel, pauli_name
 
+
 _OperatorKey: TypeAlias = Union[PauliLabel, frozenset[tuple[PauliLabel, complex]]]
 _operator_cache: dict[tuple[_OperatorKey, int], scaluq.f32.Operator] = {}
 
-#TODO
 
+def _scaluq_pauli(pauli_label:PauliLabel,coef: complex)-> scaluq.f32.PauliOperator:
+    #sq_PauliOperator
+    #print("pauli_label",pauli_label)
+    s = " ".join(f"{pauli_name(p)} {i}" for i, p in pauli_label)
+    #print("s=",s)
+    sq_pauli_op = scaluq.f32.PauliOperator(s,coef = coef)
+    return sq_pauli_op
+
+#TODO cashe
 def convert_operator(
         operator: Union[Operator, PauliLabel], n_qubits: int 
 ) ->  scaluq.f32.Operator:
     
-    op_key : _OperatorKey
-    if isinstance(operator, PauliLabel):
-        op_key = frozenset({(operator, 1.0)})
+    #print("operator",operator)
+    op = scaluq.f32.Operator(n_qubits)
+
+    paulis: Iterable[tuple[PauliLabel, complex]]
+    if isinstance(operator, Operator):
+        paulis = operator.items()
     else:
-        op_key = frozenset(operator.items())
-     
-    if (op_key, n_qubits)
+        # ope,coef= 1.0
+        paulis = [(operator,1.0)]
+    #print("paulis",paulis)
+    for pauli, coef in paulis:
+        #print("pauli coef",pauli,coef)
+        op.add_operator(_scaluq_pauli(pauli,coef))
+
+    return op
