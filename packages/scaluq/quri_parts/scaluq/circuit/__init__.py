@@ -206,7 +206,7 @@ def dense_matrix_gate_scaluq_f32(
 def convert_gate_f32(
         gate: QuantumGate,
 ) -> scaluq.f32.Gate:
-    print("in convert_gate_f32 and gate.name is ", gate.name)
+    #print("in convert_gate_f32 and gate.name is ", gate.name)
     if not is_gate_name(gate.name):
         raise ValueError(f"Unknown gate name: {gate.name}")
     
@@ -300,7 +300,7 @@ def convert_circuit_f32(
         
     return scaluq_f32_circuit
 
-#TODO
+#TODO param?
 def convert_parametric_circuit_f32(
         circuit : ParametricQuantumCircuitProtocol,
 ) -> tuple[
@@ -325,13 +325,15 @@ def convert_parametric_circuit_f32(
     else:
         raise ValueError(f"Unsupported parametric circuit type: {type(circuit)}")
     
+    #print("param",param_mapper)
+    
     scaluq_f32_circuit = scaluq.f32.Circuit(circuit.qubit_count)
     #TODO rotatetion　ゲートと扱い同じで良いのか？
     param_count = 0
     for gate, _ in param_circuit._gates:
 
         if is_parametric_gate_name(gate.name):
-            print("param_count: ", param_count)
+            #print("param_count: ", param_count)
             if gate.name == gate_names.ParametricRX:
                 #TODO arg 1?
                 scaluq_f32_circuit.add_param_gate(

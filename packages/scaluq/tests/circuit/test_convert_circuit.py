@@ -286,6 +286,7 @@ def test_convert_parametric_circuit() -> None:
 
 
     converted, param_mapper = convert_parametric_circuit_f32(circuit)
+    print("param_mapper ",param_mapper)
     print("converted: ", converted)
     print("set",converted.key_set())
     print(converted.get_gate_at(1))
