@@ -63,9 +63,6 @@ def _estimate(operator: Estimatable, state: scaluqStateT) -> Estimate[complex]:
     
     return _Estimate(value=exp)
 
-def create_scaluq_vector_estimator() -> QuantumEstimator[scaluqStateT]:
-    return _estimate
-
 
 def _sequential_parametric_estimate(
     op_state: tuple[Estimatable, scaluqParametricStateT],
@@ -95,6 +92,13 @@ def _sequential_parametric_estimate(
 
     return estimates
 
+
+
+
+def create_scaluq_vector_estimator() -> QuantumEstimator[scaluqStateT]:
+    return _estimate
+
+
 def create_scaluq_vector_parametric_estimator() ->(
         ParametricQuantumEstimator[scaluqParametricStateT]
 ):
@@ -106,3 +110,9 @@ def create_scaluq_vector_parametric_estimator() ->(
     
 
     return estimator
+
+
+#TODO
+def create_scaluq_vector_parallel_estimator(
+        
+)
