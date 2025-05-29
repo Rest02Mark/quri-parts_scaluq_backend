@@ -212,6 +212,26 @@ class TestVectorParametricEstimator:
 
         params = [0, 0, 0, -math.pi / 4]
         estimate = estimator(pauli, state, params)
-        print(estimate.value)
+        #print(estimate.value)
         assert estimate.value == pytest.approx(0,abs=1e-7)
         assert estimate.error == 0
+
+    #TODO
+    def test_estimate_batched(self) -> None:
+        pauli = pauli = pauli_label("Y0 X2 Y5")
+        state = create_parametric_vector_state(6, parametric_circuit(), 0b100000)
+        #estimator = batch
+
+
+        params_list = [
+            [0.0, 0.0, 0.0, 0.0],
+            [-math.pi / 4, 0, 0, 0],
+            [0, -math.pi / 4, 0, 0],
+            [0, 0, -math.pi / 4, 0],
+            [0, 0, 0, -math.pi / 4]
+        ]
+
+        estimate = estimator(pauli, state, params_list)
+
+        assert estimate[0].value == pytest.approx(-((1 / math.sqrt(2)) ** 3))
+        assert estimate[0].error == 0

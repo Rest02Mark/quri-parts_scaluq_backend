@@ -368,7 +368,7 @@ def convert_parametric_circuit_f32(
     return scaluq_f32_circuit, param_mapper
     
 
-
+#TODO delete
 def kakunin(circuit: ImmutableQuantumCircuit) -> None:
     print("qubit: ",circuit.qubit_count)
     print("gate: ",circuit.gates)

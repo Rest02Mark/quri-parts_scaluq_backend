@@ -76,7 +76,6 @@ def _sequential_parametric_estimate(
     #TODO
     scaluq_circuit, param_mapper = convert_parametric_circuit_f32(parametric_circuit)
 
-
     #print(scaluq_circuit.gate_list)
     estimates = []
     for param in params:
@@ -93,10 +92,24 @@ def _sequential_parametric_estimate(
     return estimates
 
 
+#TODO
+def _batched_parametric_estimate(
+        op_state:  tuple[Estimatable, scaluqParametricStateT],
+        params: Sequence[Sequence[float]],
+) -> Sequence[Estimate[complex]],
+    
+    operator, state = op_state
+    n_qubits = state.qubit_count
+    op = convert_operator(operator, n_qubits)
+    parametric_circuit = state.parametric_circuit
 
+    scaluq_circuit, param_mapper = convert_parametric_circuit_f32(parametric_circuit)
 
-def create_scaluq_vector_estimator() -> QuantumEstimator[scaluqStateT]:
-    return _estimate
+    sq_state_batched = _create_scaluq_initial_state_batched(state)
+    scaluq_circuit.update_quantum_state(sq_state,params)
+    #TODO 実装街
+    exp = op.get_expectation_value_batched(sq_state)
+    return exp
 
 
 def create_scaluq_vector_parametric_estimator() ->(
@@ -113,6 +126,16 @@ def create_scaluq_vector_parametric_estimator() ->(
 
 
 #TODO
-def create_scaluq_vector_parallel_estimator(
-        
-)
+def create_scaluq_vector_batched_estimator(
+        executer
+) -> 
+    def estimator(
+        operator: Estimatable,
+        state: scaluqParametricStateT,
+        params: Sequence[Sequence[float]],
+    ) -> Sequence[Estimate[complex]]:
+        return 
+
+
+
+    return estimator
