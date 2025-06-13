@@ -235,3 +235,4 @@ class TestVectorParametricEstimator:
 
         assert estimate[0].value == pytest.approx(-((1 / math.sqrt(2)) ** 3))
         assert estimate[0].error == 0
+        

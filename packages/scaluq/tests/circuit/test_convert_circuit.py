@@ -10,9 +10,31 @@
 
 from collections.abc import Mapping
 from typing import Callable, cast
-
+import os
+import importlib
+from typing import Any
 import numpy as np
-import scaluq
+
+# 1. 環境変数 'SCALUQ_PRECISION' を読み取る
+#    設定されていなければ、デフォルトで 'f64' (倍精度) を使用する
+_precision = os.environ.get('SCALUQ_PRECISION', 'f64').lower()
+
+# 不正な値が指定された場合はエラーを出す
+if _precision not in ['f32', 'f64']:
+    raise ImportError(
+        f"環境変数 SCALUQ_PRECISION に不正な値 '{_precision}' が指定されました。"
+        " 'f32' または 'f64' を選択してください。"
+    )
+
+# 2. `importlib` を使ってモジュールを動的にインポートする
+_module_name = f"scaluq.default.{_precision}"
+try:
+    # インポートしたモジュールを、このスコープ内でのみ有効な変数 `_backend` に格納する
+    _backend: Any = importlib.import_module(_module_name)
+    # 動作確認のために、どちらが使われているか表示する（任意）
+    print(f"[Info] Library 'a' is using backend: {_module_name}")
+except ImportError as e:
+    raise ImportError(f"指定されたscaluqバックエンド '{_module_name}' のインポートに失敗しました。") from e
 
 from quri_parts.circuit import (
     LinearMappedParametricQuantumCircuit,
@@ -44,40 +66,27 @@ from quri_parts.circuit.transpile import (
 )
 
 import sys
-import os
+
 
 
 # 現在の作業ディレクトリを取得
 script_dir = os.getcwd()
 script_dir = script_dir.replace("/jikken", "")
 target_path =  script_dir + "/packages/scaluq"
-# sys.path に追加
-#sys.path.append(target_path)
 sys.path.insert(0, target_path)
 print(sys.path)
-#sys.path.append("/home/rest/baito/quri-parts/packages/scaluq")
-#import
 
 from quri_parts.scaluq.circuit import (
-    scaluq_circuit_helper_function,
-    convert_circuit_f32,
-    convert_parametric_circuit_f32,
-    convert_gate_f32,
-    convert_parametric_gate_f32,
-    dense_matrix_gate_scaluq_f32
+    convert_circuit,
+    convert_parametric_circuit,
+    convert_gate,
+    convert_parametric_gate,
+    dense_matrix_gate_scaluq
 )
 
-def a():
-    scaluq_circuit_helper_function()
-
-#a()
-
-def helper():
-    print("helper: test_convert_circuit.py")
-
-def gates_equal_f32(g1: scaluq.f32.Gate, g2: scaluq.f32.Gate) -> bool:
+def gates_equal(g1: _backend.Gate, g2: _backend.Gate) -> bool:
     def gate_info(
-            g: scaluq.f32.Gate,
+            g: _backend.Gate,
     ) -> tuple[str,list[int],list[int]]:
         return (
             g.gate_type(),
@@ -90,10 +99,9 @@ def gates_equal_f32(g1: scaluq.f32.Gate, g2: scaluq.f32.Gate) -> bool:
     )
 
 #TODO gate type error bindingが問題?
-
-def param_gates_equal_f32(g1: scaluq.f32.ParamGate, g2: scaluq.f32.ParamGate) -> bool:
+def param_gates_equal(g1: _backend.ParamGate, g2: _backend.ParamGate) -> bool:
     def gate_info(
-            g: scaluq.f32.ParamGate,
+            g: _backend.ParamGate,
     ) -> tuple[list[int],list[int]]:
         return (
 
@@ -104,136 +112,136 @@ def param_gates_equal_f32(g1: scaluq.f32.ParamGate, g2: scaluq.f32.ParamGate) ->
     return (gate_info(g1) == gate_info(g2))
 
 
-single_qubit_gate_mapping_f32: Mapping[
-    Callable[[int], QuantumGate], Callable[[int], scaluq.f32.Gate]
+single_qubit_gate_mapping: Mapping[
+    Callable[[int], QuantumGate], Callable[[int], _backend.Gate]
 ] = {
-    gates.Identity: scaluq.f32.gate.I,
-    gates.X: scaluq.f32.gate.X,
-    gates.Y: scaluq.f32.gate.Y,
-    gates.Z: scaluq.f32.gate.Z,
-    gates.H: scaluq.f32.gate.H,
-    gates.S: scaluq.f32.gate.S,
-    gates.Sdag: scaluq.f32.gate.Sdag,
-    gates.SqrtX: scaluq.f32.gate.SqrtX,
-    gates.SqrtXdag: scaluq.f32.gate.SqrtXdag,
-    gates.SqrtY: scaluq.f32.gate.SqrtY,
-    gates.SqrtYdag: scaluq.f32.gate.SqrtYdag,
-    gates.T: scaluq.f32.gate.T,
-    gates.Tdag: scaluq.f32.gate.Tdag,
+    gates.Identity: _backend.gate.I,
+    gates.X: _backend.gate.X,
+    gates.Y: _backend.gate.Y,
+    gates.Z: _backend.gate.Z,
+    gates.H: _backend.gate.H,
+    gates.S: _backend.gate.S,
+    gates.Sdag: _backend.gate.Sdag,
+    gates.SqrtX: _backend.gate.SqrtX,
+    gates.SqrtXdag: _backend.gate.SqrtXdag,
+    gates.SqrtY: _backend.gate.SqrtY,
+    gates.SqrtYdag: _backend.gate.SqrtYdag,
+    gates.T: _backend.gate.T,
+    gates.Tdag: _backend.gate.Tdag,
 }
 
 
-def test_convert_single_qubit_gate_f32() -> None:
-    for qp_fac, sq_gate in single_qubit_gate_mapping_f32.items():
+def test_convert_single_qubit_gate() -> None:
+    for qp_fac, sq_gate in single_qubit_gate_mapping.items():
         #TODO I のみtargetを引数として受け取らないようになっている　確認
         g = qp_fac(7)
         if g.name == "Identity":
             continue
         print("g: ", g)
-        converted = convert_gate_f32(g)
+        converted = convert_gate(g)
         expected = sq_gate(7)
-        assert gates_equal_f32(converted, expected)
+        assert gates_equal(converted, expected)
 
-two_qubit_gate_mapping_f32: Mapping[
-    Callable[[int,int],QuantumGate],Callable[[int,int],scaluq.f32.Gate]
+two_qubit_gate_mapping: Mapping[
+    Callable[[int,int],QuantumGate],Callable[[int,int],_backend.Gate]
 ] = {
-    gates.CNOT: scaluq.f32.gate.CX,
-    gates.SWAP: scaluq.f32.gate.Swap,
-    gates.CZ: scaluq.f32.gate.CZ,
+    gates.CNOT: _backend.gate.CX,
+    gates.SWAP: _backend.gate.Swap,
+    gates.CZ: _backend.gate.CZ,
 }
 
-def test_convert_two_qubit_gate_f32() -> None:
-    for qp_fac, sq_gate in two_qubit_gate_mapping_f32.items():
+def test_convert_two_qubit_gate() -> None:
+    for qp_fac, sq_gate in two_qubit_gate_mapping.items():
         g = qp_fac(11, 7)
         print("g: ", g)
-        converted = convert_gate_f32(g)
+        converted = convert_gate(g)
         expected = sq_gate(11, 7)
-        assert gates_equal_f32(converted, expected)
+        assert gates_equal(converted, expected)
 
-three_qubit_gate_mapping_f32: Mapping[
+three_qubit_gate_mapping: Mapping[
     Callable[[int,int,int],QuantumGate],
-    Callable[[int,int,int],scaluq.f32.Gate]
+    Callable[[int,int,int],_backend.Gate]
 ] = {
-    gates.TOFFOLI: scaluq.f32.gate.Toffoli,
+    gates.TOFFOLI: _backend.gate.Toffoli,
 }
 
-def test_convert_three_qubit_gate_f32() -> None:
-    for qp_fac, sq_gate in three_qubit_gate_mapping_f32.items():
+def test_convert_three_qubit_gate() -> None:
+    for qp_fac, sq_gate in three_qubit_gate_mapping.items():
         g = qp_fac(11, 7, 5)
         print("g: ", g)
-        converted = convert_gate_f32(g)
+        converted = convert_gate(g)
         expected = sq_gate(11, 7, 5)
-        assert gates_equal_f32(converted, expected)
+        assert gates_equal(converted, expected)
 
-rotation_gate_mapping_f32: Mapping[
-    Callable[[int,float],QuantumGate],Callable[[int,float],scaluq.f32.Gate]
+rotation_gate_mapping: Mapping[
+    Callable[[int,float],QuantumGate],Callable[[int,float],_backend.Gate]
 ] = {
-    gates.RX: scaluq.f32.gate.RX,
-    gates.RY: scaluq.f32.gate.RY,
-    gates.RZ: scaluq.f32.gate.RZ,
+    gates.RX: _backend.gate.RX,
+    gates.RY: _backend.gate.RY,
+    gates.RZ: _backend.gate.RZ,
 }
 
-def test_convert_rotation_gate_f32() -> None:
-    print("test_convert_rotation_gate_f32")
-    for qp_fac, sq_gate in rotation_gate_mapping_f32.items():
+def test_convert_rotation_gate() -> None:
+    print("test_convert_rotation_gate")
+    for qp_fac, sq_gate in rotation_gate_mapping.items():
         g = qp_fac(7, 0.125)
-        converted = convert_gate_f32(g)
+        converted = convert_gate(g)
         expercted = sq_gate(7, 0.125)
-        assert gates_equal_f32(converted, expercted)   
+        assert gates_equal(converted, expercted)   
 
-def test_convert_unitary_matrix_gate_f32() -> None:
+def test_convert_unitary_matrix_gate() -> None:
     print("test_convert_unitary_matrix_gate")
     umat = ((1, 0), (0, np.cos(np.pi / 4) + 1j * np.sin(np.pi / 4)))
-    expected = dense_matrix_gate_scaluq_f32(7, umat)
-    converted = convert_gate_f32(gates.UnitaryMatrix((7,), umat))
+    expected = dense_matrix_gate_scaluq(7, umat)
+    converted = convert_gate(gates.UnitaryMatrix((7,), umat))
     print("converted: ", converted.gate_type())
     print("expected: ", expected.gate_type())
-    assert gates_equal_f32(converted, expected)
+    assert gates_equal(converted, expected)
 
-def test_convert_u_gate_f32() -> None:
+def test_convert_u_gate() -> None:
     for g, expected in [
-        (gates.U1(7, 0.125), scaluq.f32.gate.U1(7, 0.125)),
-        (gates.U2(7, 0.125, -0.125), scaluq.f32.gate.U2(7, 0.125, -0.125)),
-        (gates.U3(7, 0.125, -0.125, 0.625), scaluq.f32.gate.U3(7, 0.125, -0.125, 0.625)),
+        (gates.U1(7, 0.125), _backend.gate.U1(7, 0.125)),
+        (gates.U2(7, 0.125, -0.125), _backend.gate.U2(7, 0.125, -0.125)),
+        (gates.U3(7, 0.125, -0.125, 0.625), _backend.gate.U3(7, 0.125, -0.125, 0.625)),
     ]:
-        converted = convert_gate_f32(g)
-        assert gates_equal_f32(converted, expected)
+        converted = convert_gate(g)
+        assert gates_equal(converted, expected)
 
-def test_convert_pauli_gate_f32() -> None:
+def test_convert_pauli_gate() -> None:
     print("test_convert_unitary_pauli_gate")
     g = gates.Pauli((11, 7, 13), (2, 3, 1))
-    converted = convert_gate_f32(g)
-    pauli_ope = scaluq.f32.PauliOperator([11,7,13],[2,3,1])
-    expected = scaluq.f32.gate.Pauli(pauli_ope)
-    assert gates_equal_f32(converted, expected)
+    converted = convert_gate(g)
+    pauli_ope = _backend.PauliOperator([11,7,13],[2,3,1])
+    expected = _backend.gate.Pauli(pauli_ope)
+    assert gates_equal(converted, expected)
 
-def test_convert_pauli_rotation_gate_f32() -> None:
+def test_convert_pauli_rotation_gate() -> None:
     print("test_convert_pauli_rotation_gate")
     g = gates.PauliRotation((11, 7, 13), (2, 3, 1), 0.125)
-    converted = convert_gate_f32(g)
-    pauli_ope = scaluq.f32.PauliOperator([11,7,13],[2,3,1])
-    expected = scaluq.f32.gate.PauliRotation(pauli_ope, 0.125)
-    assert gates_equal_f32(converted, expected)
+    converted = convert_gate(g)
+    pauli_ope = _backend.PauliOperator([11,7,13],[2,3,1])
+    expected = _backend.gate.PauliRotation(pauli_ope, 0.125)
+    assert gates_equal(converted, expected)
 
-#TODO 
-_single_parametric_gate_mapping_f32: Mapping[
-    Callable[[int,float],ParametricQuantumGate],Callable[[int,float],scaluq.f32.Gate]
+
+_single_parametric_gate_mapping: Mapping[
+    Callable[[int,float],ParametricQuantumGate],Callable[[int,float],_backend.Gate]
 ] = {
-    gates.ParametricRX: scaluq.f32.gate.ParamRX,
-    gates.ParametricRY: scaluq.f32.gate.ParamRY,
-    gates.ParametricRZ: scaluq.f32.gate.ParamRZ,
+    gates.ParametricRX: _backend.gate.ParamRX,
+    gates.ParametricRY: _backend.gate.ParamRY,
+    gates.ParametricRZ: _backend.gate.ParamRZ,
 }
 
-def test_convert_parametric_gate_f32() -> None:
-    print("test_convert_parametric_gate_f32")
-    for qp_fac, sq_gate in _single_parametric_gate_mapping_f32.items():
+def test_convert_parametric_gate() -> None:
+    print("test_convert_parametric_gate")
+    for qp_fac, sq_gate in _single_parametric_gate_mapping.items():
         g = qp_fac(7)
-        converted = convert_parametric_gate_f32(g)
+        converted = convert_parametric_gate(g)
         expected = sq_gate(7)
-        assert param_gates_equal_f32(converted, expected)
+        assert param_gates_equal(converted, expected)
 
 
-def test_convert_circuit_f32() -> None:
+def test_convert_circuit() -> None:
     circuit = QuantumCircuit(3)
     original_gates = [
         gates.X(1),
@@ -246,29 +254,29 @@ def test_convert_circuit_f32() -> None:
     for g in original_gates:
         circuit.add_gate(g)
 
-    converted = convert_circuit_f32(circuit)
+    converted = convert_circuit(circuit)
     assert converted.n_qubits() == 3
 
     expected_gates = [
-        scaluq.f32.gate.X(1),
-        scaluq.f32.gate.H(2),
-        scaluq.f32.gate.CX(0, 2),
-        scaluq.f32.gate.RX(0, 0.125),
-        scaluq.f32.gate.Toffoli(2, 0, 1),
+        _backend.gate.X(1),
+        _backend.gate.H(2),
+        _backend.gate.CX(0, 2),
+        _backend.gate.RX(0, 0.125),
+        _backend.gate.Toffoli(2, 0, 1),
     ]
 
     assert converted.n_gates() == len(expected_gates)
     for i, expected in enumerate(expected_gates):
-        assert gates_equal_f32(converted.get_gate_at(i), expected)
+        assert gates_equal(converted.get_gate_at(i), expected)
 
 
-param_gate_mapping_f32: Mapping[
-    Callable[[int,float],QuantumGate],Callable[[int,float],scaluq.f32.Gate]
+param_gate_mapping: Mapping[
+    Callable[[int,float],QuantumGate],Callable[[int,float],_backend.Gate]
 ] = {
-    gates.ParametricRX: scaluq.f32.gate.ParamRX,
-    gates.ParametricRY: scaluq.f32.gate.ParamRY,
-    gates.ParametricRZ: scaluq.f32.gate.ParamRZ,
-    gates.ParametricPauliRotation: scaluq.f32.gate.ParamPauliRotation,
+    gates.ParametricRX: _backend.gate.ParamRX,
+    gates.ParametricRY: _backend.gate.ParamRY,
+    gates.ParametricRZ: _backend.gate.ParamRZ,
+    gates.ParametricPauliRotation: _backend.gate.ParamPauliRotation,
 }
 
 #TODO 多分ok
@@ -285,7 +293,7 @@ def test_convert_parametric_circuit() -> None:
     circuit.add_ParametricPauliRotation_gate((0, 1, 2), (1, 2, 3))
 
 
-    converted, param_mapper = convert_parametric_circuit_f32(circuit)
+    converted, param_mapper = convert_parametric_circuit(circuit)
     print("param_mapper ",param_mapper)
     print("converted: ", converted)
     print("set",converted.key_set())
@@ -296,15 +304,15 @@ def test_convert_parametric_circuit() -> None:
     assert converted.n_qubits() == 3
 
     expected_gates = [
-        scaluq.f32.gate.X(0),
-        scaluq.f32.gate.ParamRX(0),
-        scaluq.f32.gate.H(2),
-        scaluq.f32.gate.ParamRY(1),
-        scaluq.f32.gate.CX(0, 2),
-        scaluq.f32.gate.ParamRZ(2),
-        scaluq.f32.gate.RX(0, 0.125),
-        scaluq.f32.gate.ParamPauliRotation(
-            scaluq.f32.PauliOperator([0, 1, 2], [1, 2, 3]),
+        _backend.gate.X(0),
+        _backend.gate.ParamRX(0),
+        _backend.gate.H(2),
+        _backend.gate.ParamRY(1),
+        _backend.gate.CX(0, 2),
+        _backend.gate.ParamRZ(2),
+        _backend.gate.RX(0, 0.125),
+        _backend.gate.ParamPauliRotation(
+            _backend.PauliOperator([0, 1, 2], [1, 2, 3]),
             0,
         ),
     ]
@@ -312,10 +320,10 @@ def test_convert_parametric_circuit() -> None:
     assert converted.n_gates() == len(expected_gates)
 
     for i, expected in enumerate(expected_gates):
-        if isinstance(expected, scaluq.f32.ParamGate):
+        if isinstance(expected, _backend.ParamGate):
             tmp = converted.get_gate_at(i)
-            assert param_gates_equal_f32(tmp[0], expected)
+            assert param_gates_equal(tmp[0], expected)
         else:
-            assert gates_equal_f32(converted.get_gate_at(i), expected)
+            assert gates_equal(converted.get_gate_at(i), expected)
 
 
