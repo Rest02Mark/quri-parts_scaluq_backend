@@ -15,26 +15,20 @@ import importlib
 from typing import Any
 import numpy as np
 
-# 1. 環境変数 'SCALUQ_PRECISION' を読み取る
-#    設定されていなければ、デフォルトで 'f64' (倍精度) を使用する
-_precision = os.environ.get('SCALUQ_PRECISION', 'f64').lower()
 
-# 不正な値が指定された場合はエラーを出す
+_precision = os.environ.get('SCALUQ_PRECISION', 'f64').lower()
 if _precision not in ['f32', 'f64']:
     raise ImportError(
         f"環境変数 SCALUQ_PRECISION に不正な値 '{_precision}' が指定されました。"
         " 'f32' または 'f64' を選択してください。"
     )
-
-# 2. `importlib` を使ってモジュールを動的にインポートする
 _module_name = f"scaluq.default.{_precision}"
 try:
-    # インポートしたモジュールを、このスコープ内でのみ有効な変数 `_backend` に格納する
     _backend: Any = importlib.import_module(_module_name)
-    # 動作確認のために、どちらが使われているか表示する（任意）
     print(f"[Info] Library 'a' is using backend: {_module_name}")
 except ImportError as e:
     raise ImportError(f"指定されたscaluqバックエンド '{_module_name}' のインポートに失敗しました。") from e
+
 
 from quri_parts.circuit import (
     LinearMappedParametricQuantumCircuit,
@@ -67,9 +61,7 @@ from quri_parts.circuit.transpile import (
 
 import sys
 
-
-
-# 現在の作業ディレクトリを取得
+#TODO delete
 script_dir = os.getcwd()
 script_dir = script_dir.replace("/jikken", "")
 target_path =  script_dir + "/packages/scaluq"

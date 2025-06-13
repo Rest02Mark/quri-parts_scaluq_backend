@@ -9,42 +9,52 @@
 # limitations under the License.
 
 from collections.abc import Iterable
-from typing import Union
+from typing import Union,Any
+import os
+import importlib
+import sys
 
 from typing_extensions import TypeAlias
 import scaluq
 from quri_parts.core.operator import Operator, PauliLabel, pauli_name
 
 
+_precision = os.environ.get('SCALUQ_PRECISION', 'f64').lower()
+if _precision not in ['f32', 'f64']:
+    raise ImportError(
+        f"環境変数 SCALUQ_PRECISION に不正な値 '{_precision}' が指定されました。"
+        " 'f32' または 'f64' を選択してください。"
+    )
+_module_name = f"scaluq.default.{_precision}"
+try:
+    _backend: Any = importlib.import_module(_module_name)
+    print(f"[Info] Library 'a' is using backend: {_module_name}")
+except ImportError as e:
+    raise ImportError(f"指定されたscaluqバックエンド '{_module_name}' のインポートに失敗しました。") from e
+
+
 _OperatorKey: TypeAlias = Union[PauliLabel, frozenset[tuple[PauliLabel, complex]]]
-_operator_cache: dict[tuple[_OperatorKey, int], scaluq.f32.Operator] = {}
+_operator_cache: dict[tuple[_OperatorKey, int], _backend.Operator] = {}
 
 
-def _scaluq_pauli(pauli_label:PauliLabel,coef: complex)-> scaluq.f32.PauliOperator:
-    #sq_PauliOperator
-    #print("pauli_label",pauli_label)
+def _scaluq_pauli(pauli_label:PauliLabel,coef: complex)-> _backend.PauliOperator:
     s = " ".join(f"{pauli_name(p)} {i}" for i, p in pauli_label)
-    #print("s=",s)
-    sq_pauli_op = scaluq.f32.PauliOperator(s,coef = coef)
+    sq_pauli_op = _backend.PauliOperator(s,coef = coef)
     return sq_pauli_op
 
 #TODO cashe
 def convert_operator(
         operator: Union[Operator, PauliLabel], n_qubits: int 
-) ->  scaluq.f32.Operator:
+) ->  _backend.Operator:
     
-    #print("operator",operator)
-    op = scaluq.f32.Operator(n_qubits)
+    op = _backend.Operator(n_qubits)
 
     paulis: Iterable[tuple[PauliLabel, complex]]
     if isinstance(operator, Operator):
         paulis = operator.items()
     else:
-        # ope,coef= 1.0
         paulis = [(operator,1.0)]
-    #print("paulis",paulis)
     for pauli, coef in paulis:
-        #print("pauli coef",pauli,coef)
         op.add_operator(_scaluq_pauli(pauli,coef))
 
     return op
