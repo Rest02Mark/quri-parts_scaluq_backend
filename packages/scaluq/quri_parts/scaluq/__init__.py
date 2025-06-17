@@ -13,7 +13,6 @@ from quri_parts.core.state import (
 
 
 scaluqStateT : TypeAlias = Union[CircuitQuantumState, QuantumStateVector]
-
 scaluqParametricStateT : TypeAlias = Union[
     ParametricCircuitQuantumState, ParametricQuantumStateVector
 ]

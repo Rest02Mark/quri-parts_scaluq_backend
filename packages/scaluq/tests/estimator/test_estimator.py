@@ -36,7 +36,8 @@ from quri_parts.scaluq import scaluqParametricStateT
 from quri_parts.scaluq.estimator import(
     _Estimate,
     create_scaluq_vector_estimator,
-    create_scaluq_vector_parametric_estimator
+    create_scaluq_vector_parametric_estimator,
+    create_scaluq_vector_batched_parametric_estimator
 )
 
 def create_vector(qubit_count: int, bits: int) -> StateVectorType:
@@ -188,6 +189,7 @@ class TestVectorParametricEstimator:
 
         params = [0.0, 0.0, 0.0, 0.0]
         estimate = estimator(pauli, state, params)
+
         assert estimate.value == pytest.approx(-((1 / math.sqrt(2)) ** 3))
         assert estimate.error == 0
 
@@ -208,17 +210,14 @@ class TestVectorParametricEstimator:
 
         params = [0, 0, 0, -math.pi / 4]
         estimate = estimator(pauli, state, params)
-        #print(estimate.value)
         assert estimate.value == pytest.approx(0,abs=1e-7)
         assert estimate.error == 0
 
     #TODO
-    """
     def test_estimate_batched(self) -> None:
-        pauli = pauli = pauli_label("Y0 X2 Y5")
+        pauli = pauli_label("Y0 X2 Y5")
         state = create_parametric_vector_state(6, parametric_circuit(), 0b100000)
-        #estimator = batch
-
+        estimator = create_scaluq_vector_batched_parametric_estimator()
 
         params_list = [
             [0.0, 0.0, 0.0, 0.0],
@@ -230,7 +229,9 @@ class TestVectorParametricEstimator:
 
         estimate = estimator(pauli, state, params_list)
 
-        assert estimate[0].value == pytest.approx(-((1 / math.sqrt(2)) ** 3))
-        assert estimate[0].error == 0
-    """
-        
+        assert estimate[0].value== pytest.approx(-((1 / math.sqrt(2)) ** 3))
+        assert estimate[1].value== pytest.approx(-0.5)
+        assert estimate[2].value== pytest.approx(-0.5)
+        assert estimate[3].value== pytest.approx(-0.5)
+        assert estimate[4].value== pytest.approx(0,abs=1e-7)
+

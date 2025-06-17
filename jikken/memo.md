@@ -18,3 +18,5 @@ update_quantum_stateは回路にparam_gateを含む場合、必ず、引数にpa
 
 
 pauli周りで結果が-１倍されるかもしれない
+
+importを重複して行っているため、　binding error import 方法を変える
