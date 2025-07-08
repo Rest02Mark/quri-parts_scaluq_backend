@@ -255,8 +255,6 @@ def convert_circuit(
     for gate in circuit.gates:
         #print(convert_gate(gate))
         scaluq_circuit.add_gate(convert_gate(gate))
-
-    print("convert end f32.")
         
     return scaluq_circuit
 
@@ -285,7 +283,6 @@ def convert_parametric_circuit(
     else:
         raise ValueError(f"Unsupported parametric circuit type: {type(circuit)}")
     
-    #print("param",param_mapper)
     
     scaluq_circuit = _backend.Circuit(circuit.qubit_count)
     #TODO rotatetion　ゲートと扱い同じで良いのか？

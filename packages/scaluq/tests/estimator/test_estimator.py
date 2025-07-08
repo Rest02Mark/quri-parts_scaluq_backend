@@ -1,5 +1,4 @@
 import math
-from concurrent.futures import ThreadPoolExecutor
 from typing import Union
 
 import numpy as np
@@ -24,12 +23,9 @@ from quri_parts.core.state import (
 script_dir = os.getcwd()
 script_dir = script_dir.replace("/jikken", "")
 target_path =  script_dir + "/packages/scaluq"
-# sys.path に追加
-#sys.path.append(target_path)
 sys.path.insert(0, target_path)
-print(sys.path)
-#sys.path.append("/home/rest/baito/quri-parts/packages/scaluq")
-#import
+
+
 
 
 from quri_parts.scaluq import scaluqParametricStateT

@@ -129,7 +129,6 @@ def _create_scaluq_initial_state_batched(
         batch_num : int,
 ) -> _backend.StateVectorBatched:
     
-
     sq_state = _backend.StateVectorBatched(batch_num,state.qubit_count)
 
     if isinstance(state, (QuantumStateVector, ParametricQuantumStateVector)):
@@ -160,9 +159,7 @@ def _batched_parametric_estimate(
         batched_params[str(i)] = [param[i] for param in params] 
 
     scaluq_circuit.update_quantum_state(sq_state_batched,batched_params)
-    #print(sq_state_batched)
     exp = op.get_expectation_value(sq_state_batched)
-
 
     return [_Estimate(value=val) for val in exp]
 
