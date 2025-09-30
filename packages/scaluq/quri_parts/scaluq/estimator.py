@@ -72,11 +72,9 @@ def _sequential_parametric_estimate(
     n_qubits = state.qubit_count
     op = convert_operator(operator, n_qubits)
     parametric_circuit = state.parametric_circuit
-
-    #TODO
+    
     scaluq_circuit, param_mapper = convert_parametric_circuit(parametric_circuit)
 
-    #print(scaluq_circuit.gate_list)
     estimates = []
     for param in params:
         tmp_params :Mapping[str,float] = {} 

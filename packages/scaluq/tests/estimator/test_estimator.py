@@ -26,8 +26,6 @@ target_path =  script_dir + "/packages/scaluq"
 sys.path.insert(0, target_path)
 
 
-
-
 from quri_parts.scaluq import scaluqParametricStateT
 from quri_parts.scaluq.estimator import(
     _Estimate,
