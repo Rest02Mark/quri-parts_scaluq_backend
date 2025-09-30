@@ -19,19 +19,7 @@ import scaluq
 from quri_parts.core.operator import Operator, PauliLabel, pauli_name
 
 
-_precision = os.environ.get('SCALUQ_PRECISION', 'f64').lower()
-if _precision not in ['f32', 'f64']:
-    raise ImportError(
-        f"環境変数 SCALUQ_PRECISION に不正な値 '{_precision}' が指定されました。"
-        " 'f32' または 'f64' を選択してください。"
-    )
-_module_name = f"scaluq.default.{_precision}"
-try:
-    _backend: Any = importlib.import_module(_module_name)
-    print(f"[Info] Library 'a' is using backend: {_module_name}")
-except ImportError as e:
-    raise ImportError(f"指定されたscaluqバックエンド '{_module_name}' のインポートに失敗しました。") from e
-
+from .. import cast_to_list,_backend
 
 _OperatorKey: TypeAlias = Union[PauliLabel, frozenset[tuple[PauliLabel, complex]]]
 _operator_cache: dict[tuple[_OperatorKey, int], _backend.Operator] = {}

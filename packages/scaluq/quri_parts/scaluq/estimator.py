@@ -1,4 +1,4 @@
-0# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #      http://www.apache.org/licenses/LICENSE-2.0
@@ -33,21 +33,7 @@ from quri_parts.core.utils.concurrent import execute_concurrently
 
 from quri_parts.scaluq import scaluqStateT, scaluqParametricStateT
 
-
-_precision = os.environ.get('SCALUQ_PRECISION', 'f64').lower()
-if _precision not in ['f32', 'f64']:
-    raise ImportError(
-        f"環境変数 SCALUQ_PRECISION に不正な値 '{_precision}' が指定されました。"
-        " 'f32' または 'f64' を選択してください。"
-    )
-_module_name = f"scaluq.default.{_precision}"
-try:
-    _backend: Any = importlib.import_module(_module_name)
-    print(f"[Info] Library 'a' is using backend: {_module_name}")
-except ImportError as e:
-    raise ImportError(f"指定されたscaluqバックエンド '{_module_name}' のインポートに失敗しました。") from e
-
-from . import cast_to_list
+from . import cast_to_list,_backend
 from .circuit import convert_circuit, convert_parametric_circuit
 from .operator import convert_operator
 
@@ -64,8 +50,6 @@ def _create_scaluq_initial_state(
         sq_state.load(cast_to_list(state.vector))
     return sq_state
 
-
-#TODO compile circuit 
 def _estimate(operator: Estimatable, state: scaluqStateT) -> Estimate[complex]:
     if operator == zero():
         return _Estimate(value=0.0)

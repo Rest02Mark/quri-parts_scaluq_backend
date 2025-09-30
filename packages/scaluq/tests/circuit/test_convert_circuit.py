@@ -90,24 +90,22 @@ def gates_equal(g1: _backend.Gate, g2: _backend.Gate) -> bool:
         bool, np.all(g1.get_matrix() == g2.get_matrix())
     )
 
-#TODO gate type error bindingが問題?
 def param_gates_equal(g1: _backend.ParamGate, g2: _backend.ParamGate) -> bool:
     def gate_info(
             g: _backend.ParamGate,
     ) -> tuple[list[int],list[int]]:
         return (
-
+            g.param_gate_type(),
             g.target_qubit_list(),
             g.control_qubit_list(),
         )
-    #TODO get matrix
     return (gate_info(g1) == gate_info(g2))
 
 
 single_qubit_gate_mapping: Mapping[
     Callable[[int], QuantumGate], Callable[[int], _backend.Gate]
 ] = {
-    gates.Identity: _backend.gate.I,
+    # gates.Identity: _backend.gate.I,
     gates.X: _backend.gate.X,
     gates.Y: _backend.gate.Y,
     gates.Z: _backend.gate.Z,
@@ -127,8 +125,6 @@ def test_convert_single_qubit_gate() -> None:
     for qp_fac, sq_gate in single_qubit_gate_mapping.items():
         #TODO I のみtargetを引数として受け取らないようになっている　確認
         g = qp_fac(7)
-        if g.name == "Identity":
-            continue
         print("g: ", g)
         converted = convert_gate(g)
         expected = sq_gate(7)
@@ -178,8 +174,8 @@ def test_convert_rotation_gate() -> None:
     for qp_fac, sq_gate in rotation_gate_mapping.items():
         g = qp_fac(7, 0.125)
         converted = convert_gate(g)
-        expercted = sq_gate(7, 0.125)
-        assert gates_equal(converted, expercted)   
+        expected = sq_gate(7, 0.125)
+        assert gates_equal(converted, expected)   
 
 def test_convert_unitary_matrix_gate() -> None:
     print("test_convert_unitary_matrix_gate")
@@ -271,7 +267,6 @@ param_gate_mapping: Mapping[
     gates.ParametricPauliRotation: _backend.gate.ParamPauliRotation,
 }
 
-#TODO 多分ok
 def test_convert_parametric_circuit() -> None:
     circuit = ParametricQuantumCircuit(3)
     circuit.add_X_gate(0)
